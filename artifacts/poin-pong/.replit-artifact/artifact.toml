@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "POIN PONG"
+description = "A responsive student discipline dashboard for SMP Negeri 2 Semarang, with automatic point totals, student status levels, violation entry, and history stored locally in the browser."
+version = "1.0.0"
+id = "artifacts/poin-pong"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18308
+
+[services.development]
+run = "pnpm --filter @workspace/poin-pong run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/poin-pong", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/poin-pong/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18308"
+BASE_PATH = "/"
