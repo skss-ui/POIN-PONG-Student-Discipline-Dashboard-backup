@@ -120,6 +120,7 @@
     .students-panel .panel-head{align-items:center}
     .student-summary{color:#8090a1;font-size:11px}
     .student-list{display:grid;grid-template-columns:repeat(3,1fr);gap:0 22px;padding:0 21px 15px}
+    .student-empty{grid-column:1/-1;padding:20px 0;color:#8795a5;font-size:11px;text-align:center}
     .student-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid #edf1f4;min-width:0}
     .student-initial{height:33px;width:33px;border-radius:10px;display:grid;place-items:center;background:#e8f0f6;color:#315a7c;font-size:10px;font-weight:800;flex:none}
     .student-meta{flex:1;min-width:0}.student-meta strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#334a63}.student-meta span{font-size:10px;color:#8a98a7;display:block;margin-top:3px}
@@ -164,7 +165,7 @@
           <button class="primary-btn" id="jumpToForm" data-testid="add-violation-button"><span class="plus">+</span> Catat pelanggaran</button>
         </section>
         <section class="metrics" aria-label="Ringkasan data">
-          <article class="metric" data-testid="metric-students"><div class="metric-label"><span class="metric-icon">♙</span> Siswa terpantau</div><div class="metric-value" id="studentCount">—</div><div class="metric-note">Siswa dalam daftar contoh</div></article>
+          <article class="metric" data-testid="metric-students"><div class="metric-label"><span class="metric-icon">♙</span> Siswa terpantau</div><div class="metric-value" id="studentCount">—</div><div class="metric-note">Siswa dengan catatan</div></article>
           <article class="metric" data-testid="metric-violations"><div class="metric-label"><span class="metric-icon">≡</span> Catatan pelanggaran</div><div class="metric-value" id="violationCount">—</div><div class="metric-note"><strong id="thisMonthCount">—</strong> tercatat bulan ini</div></article>
           <article class="metric" data-testid="metric-active"><div class="metric-label"><span class="metric-icon">◎</span> Perlu perhatian</div><div class="metric-value" id="attentionCount">—</div><div class="metric-note">Siswa di level perhatian ke atas</div></article>
           <article class="metric" data-testid="metric-points"><div class="metric-label"><span class="metric-icon">↗</span> Poin tercatat</div><div class="metric-value" id="totalPoints">—</div><div class="metric-note">Akumulasi seluruh catatan</div></article>
@@ -175,7 +176,7 @@
             <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 620 190" role="img" aria-label="Grafik catatan pelanggaran per bulan"></svg></div>
           </article>
           <article class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">Sebaran status siswa</h2><p class="panel-desc">Berdasarkan akumulasi poin demo</p></div></div>
+            <div class="panel-head"><div><h2 class="panel-title">Sebaran status siswa</h2><p class="panel-desc">Berdasarkan akumulasi poin</p></div></div>
             <div class="level-list" id="levelList"></div>
           </article>
         </section>
@@ -183,8 +184,9 @@
           <article class="panel form-panel" id="formSection">
             <div class="panel-head"><div><h2 class="panel-title">Catat pelanggaran</h2><p class="panel-desc">Isi detail kejadian untuk menambah catatan.</p></div></div>
             <form class="form-body" id="violationForm" novalidate data-testid="violation-form">
-              <div class="field"><label for="studentSelect">Nama siswa</label><select id="studentSelect" required data-testid="student-select"><option value="">Pilih siswa</option></select></div>
+              <div class="field"><label for="studentName">Nama lengkap siswa</label><input id="studentName" type="text" maxlength="100" autocomplete="off" placeholder="Ketik nama lengkap siswa" required data-testid="student-name"></div>
               <div class="field"><label for="violationSelect">Jenis pelanggaran</label><select id="violationSelect" required data-testid="violation-select"><option value="">Pilih jenis pelanggaran</option></select></div>
+              <div class="field" id="seriousPointsField" hidden><label for="seriousPoints">Poin pelanggaran berat</label><select id="seriousPoints" data-testid="serious-points" disabled><option value="3">+3 poin</option><option value="4">+4 poin</option><option value="5">+5 poin</option></select></div>
               <div class="points-preview"><span>Poin pelanggaran</span><strong id="pointPreview" data-testid="point-preview">— poin</strong></div>
               <div class="field"><label for="incidentDate">Tanggal kejadian</label><input id="incidentDate" type="date" required data-testid="incident-date"></div>
               <div class="field"><label for="notes">Catatan tambahan <span style="font-weight:400;color:#8a98a7">(opsional)</span></label><textarea id="notes" maxlength="180" placeholder="Contoh: kejadian saat jam pertama" data-testid="incident-notes"></textarea></div>
@@ -196,7 +198,6 @@
             <div class="panel-head history-head"><div><h2 class="panel-title">Riwayat pelanggaran</h2><p class="panel-desc" id="historySummary">Catatan terbaru dari seluruh siswa</p></div><span class="range-pill" id="visibleCount">0 catatan</span></div>
             <div class="filters">
               <div class="search-wrap"><input class="filter-control" id="searchInput" type="search" placeholder="Cari nama atau pelanggaran" aria-label="Cari riwayat" data-testid="history-search"></div>
-              <select class="filter-control" id="classFilter" aria-label="Filter kelas" data-testid="class-filter"><option value="">Semua kelas</option></select>
               <select class="filter-control" id="statusFilter" aria-label="Filter status siswa" data-testid="status-filter"><option value="">Semua status</option><option value="Aman">Aman</option><option value="Perhatian">Perhatian</option><option value="Pembinaan">Pembinaan</option></select>
             </div>
             <div class="table-scroll">
@@ -209,7 +210,7 @@
           <div class="panel-head"><div><h2 class="panel-title">Pantauan siswa</h2><p class="panel-desc">Akumulasi poin dan status terkini</p></div><span class="student-summary" id="studentsSummary"></span></div>
           <div class="student-list" id="studentList" data-testid="student-list"></div>
         </section>
-        <aside class="rule-note" data-testid="demo-rules-notice"><span class="note-mark">i</span><div><strong>Aturan dan ambang poin ilustratif untuk demo</strong>Status contoh: Aman &lt;10 poin · Perhatian 10–24 poin · Pembinaan ≥25 poin. Jenis pelanggaran dan seluruh nilai poin juga hanya contoh penggunaan sistem; ini bukan peraturan resmi SMP Negeri 2 Semarang. Sesuaikan dengan ketentuan sekolah sebelum digunakan untuk keperluan nyata.</div></aside>
+        <aside class="rule-note" data-testid="demo-rules-notice"><span class="note-mark">i</span><div><strong>Ambang status ilustratif untuk demo</strong>Kategori pelanggaran: Terlambat (+1), Atribut tidak lengkap (+2), Pelanggaran berat (+3–5), dan Tidak tertib saat upacara (+1). Status contoh: Aman &lt;10 poin · Perhatian 10–24 poin · Pembinaan ≥25 poin. Ini bukan peraturan resmi SMP Negeri 2 Semarang.</div></aside>
       </main>
     </div>
   </div>
@@ -217,101 +218,154 @@
   <script>
     (() => {
       "use strict";
-      const STORE_KEY = "poin-pong-demo-records-v1";
-      const students = [
-        {id:"s1",name:"Aditya Pratama",klass:"VII A"},{id:"s2",name:"Nadia Putri",klass:"VII B"},{id:"s3",name:"Fajar Ramadhan",klass:"VII C"},
-        {id:"s4",name:"Sekar Ayuningtyas",klass:"VIII A"},{id:"s5",name:"Rizky Maulana",klass:"VIII B"},{id:"s6",name:"Dinda Maharani",klass:"VIII C"},
-        {id:"s7",name:"Bagas Wicaksono",klass:"IX A"},{id:"s8",name:"Citra Lestari",klass:"IX B"},{id:"s9",name:"Rafi Kurniawan",klass:"IX C"}
-      ];
+      const STORE_KEY = "poin-pong-records-v2";
+      const LEGACY_STORE_KEY = "poin-pong-demo-records-v1";
+      const LEGACY_BACKUP_KEY = "poin-pong-legacy-backup-v1";
+      const INVALID_BACKUP_KEY = "poin-pong-invalid-backup-v2";
       const violations = [
-        {id:"late",name:"Terlambat masuk sekolah",points:5},{id:"uniform",name:"Kelengkapan seragam tidak sesuai",points:5},
-        {id:"attribute",name:"Tidak membawa atribut sekolah",points:3},{id:"homework",name:"Tidak mengerjakan tugas",points:4},
-        {id:"phone",name:"Menggunakan gawai saat pembelajaran",points:8},{id:"class",name:"Tidak mengikuti pembelajaran",points:10},
-        {id:"litter",name:"Membuang sampah sembarangan",points:3},{id:"disrupt",name:"Mengganggu ketertiban kelas",points:6},
-        {id:"permission",name:"Keluar lingkungan tanpa izin",points:12}
+        {id:"late",name:"Terlambat",points:1},
+        {id:"attribute",name:"Atribut tidak lengkap",points:2},
+        {id:"serious",name:"Pelanggaran berat",points:null},
+        {id:"ceremony",name:"Tidak tertib saat upacara",points:1}
       ];
       const day = 86400000;
       const localToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
       const ago = n => new Date(Date.now() - n * day).toISOString().slice(0,10);
-      const demoRecords = [
-        ["s2","late",1,"08:04 · gerbang utama"],["s5","phone",2,"Saat pembelajaran"],["s1","attribute",3,"Atribut upacara"],
-        ["s7","late",5,"08:02 · gerbang utama"],["s3","homework",7,"Tugas IPA"],["s8","disrupt",9,"Jam pelajaran kedua"],
-        ["s4","uniform",12,"Kelengkapan seragam"],["s2","litter",16,"Area kantin"],["s6","class",19,"Tidak hadir di kelas"],
-        ["s9","late",22,"08:10 · gerbang utama"],["s5","homework",27,"Tugas Matematika"],["s1","late",31,"08:06 · gerbang utama"],
-        ["s7","phone",36,"Saat pembelajaran"],["s3","uniform",41,"Atribut seragam"],["s4","late",48,"08:03 · gerbang utama"],
-        ["s8","attribute",54,"Atribut upacara"],["s6","disrupt",65,"Pergantian pelajaran"],["s9","homework",73,"Tugas Bahasa Indonesia"],
-        ["s5","late",85,"08:05 · gerbang utama"],["s7","class",96,"Tidak mengikuti pelajaran"],["s7","permission",112,"Catatan contoh untuk status pembinaan"]
-      ].map((r,i)=>({id:"demo-"+i,studentId:r[0],violationId:r[1],date:ago(r[2]),notes:r[3],createdAt:i}));
-      const validRecord = r => r && typeof r==="object" && typeof r.id==="string" && students.some(s=>s.id===r.studentId) && violations.some(v=>v.id===r.violationId) && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && (r.notes==null || typeof r.notes==="string");
-      function loadRecords(){
-        try{
-          const raw=localStorage.getItem(STORE_KEY);
-          if(raw===null)return demoRecords.slice();
-          const parsed=JSON.parse(raw);
-          if(!Array.isArray(parsed))throw new Error("Format data tidak valid");
-          return parsed.filter(validRecord);
-        }catch(err){
-          console.warn("Data POIN PONG lokal tidak dapat dibaca; menggunakan contoh.",err);
-          try{localStorage.removeItem(STORE_KEY)}catch(_){}
-          window.setTimeout(()=>notify("Data tersimpan sebelumnya tidak valid. Contoh data ditampilkan kembali.",true),400);
-          return demoRecords.slice();
-        }
-      }
-      let records=loadRecords();
       const $=id=>document.getElementById(id);
       const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-      const studentFor=id=>students.find(s=>s.id===id);
+      const normalizeName=value=>String(value??"").normalize("NFKC").replace(/\s+/g," ").trim();
+      const studentKey=name=>normalizeName(name).toLocaleLowerCase("id-ID");
       const violationFor=id=>violations.find(v=>v.id===id);
-      const totals=()=>{const map=Object.fromEntries(students.map(s=>[s.id,0]));records.forEach(r=>{if(map[r.studentId]!==undefined){const v=violationFor(r.violationId);if(v)map[r.studentId]+=v.points}});return map};
       const statusFor=points=>points>=25?"Pembinaan":points>=10?"Perhatian":"Aman";
       const statusClass=status=>status.toLowerCase();
       const dateFmt=date=>new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(date+"T12:00:00"));
       let toastTimer;
-      function notify(message,error=false){const t=$("toast");t.textContent=message;t.classList.toggle("error",error);t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3400)}
+      let migrationMessage="";
+      function notify(message,error=false){const t=$("toast");t.textContent=message;t.classList.toggle("error",error);t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),5000)}
+      function archiveStoredValue(sourceKey,backupKey){
+        try{
+          const raw=localStorage.getItem(sourceKey);
+          if(raw===null)return false;
+          if(localStorage.getItem(backupKey)===null)localStorage.setItem(backupKey,raw);
+          return true;
+        }catch(err){console.warn("Cadangan lokal tidak dapat dibuat.",err);return false}
+      }
+      const demoRecords = [
+        ["Nadia Putri","late",1,"08:04 · gerbang utama"],["Rizky Maulana","serious",2,"Saat pembelajaran",4],["Aditya Pratama","attribute",3,"Atribut sekolah"],
+        ["Bagas Wicaksono","serious",5,"Mengganggu kegiatan kelas",5],["Fajar Ramadhan","ceremony",7,"Barisan upacara",1],["Citra Lestari","serious",9,"Catatan contoh",3],
+        ["Sekar Ayuningtyas","attribute",12,"Atribut sekolah"],["Nadia Putri","late",16,"08:02 · gerbang utama"],["Dinda Maharani","serious",19,"Catatan contoh",3],
+        ["Rafi Kurniawan","late",22,"08:10 · gerbang utama"],["Rizky Maulana","attribute",27,"Atribut sekolah"],["Aditya Pratama","late",31,"08:06 · gerbang utama"],
+        ["Bagas Wicaksono","serious",36,"Catatan contoh",5],["Fajar Ramadhan","attribute",41,"Atribut sekolah"],["Sekar Ayuningtyas","late",48,"08:03 · gerbang utama"],
+        ["Citra Lestari","ceremony",54,"Barisan upacara"],["Dinda Maharani","serious",65,"Catatan contoh",4],["Rafi Kurniawan","attribute",73,"Atribut sekolah"],
+        ["Rizky Maulana","late",85,"08:05 · gerbang utama"],["Bagas Wicaksono","serious",96,"Catatan contoh",5],["Bagas Wicaksono","serious",112,"Catatan contoh",5],
+        ["Bagas Wicaksono","serious",120,"Catatan contoh",5]
+      ].map((r,i)=>({id:"demo-"+i,studentName:r[0],violationId:r[1],points:r[1]==="serious"?r[4]:violationFor(r[1]).points,date:ago(r[2]),notes:r[3],createdAt:i}));
+      const validDate=date=>{
+        if(typeof date!=="string"||! /^\d{4}-\d{2}-\d{2}$/.test(date))return false;
+        const [year,month,day]=date.split("-").map(Number),parsed=new Date(year,month-1,day);
+        return parsed.getFullYear()===year&&parsed.getMonth()===month-1&&parsed.getDate()===day;
+      };
+      const validRecord=r=>{
+        if(!r||typeof r!=="object"||typeof r.id!=="string"||!normalizeName(r.studentName)||!validDate(r.date)||(r.notes!=null&&typeof r.notes!=="string"))return false;
+        const violation=violationFor(r.violationId);
+        if(!violation||!Number.isInteger(r.points))return false;
+        return violation.id==="serious"?r.points>=3&&r.points<=5:r.points===violation.points;
+      };
+      function loadRecords(){
+        try{
+          const raw=localStorage.getItem(STORE_KEY);
+          if(raw!==null){
+            const parsed=JSON.parse(raw);
+            if(!Array.isArray(parsed))throw new Error("Format data tidak valid");
+            const valid=parsed.filter(validRecord).map(r=>({...r,studentName:normalizeName(r.studentName),notes:r.notes||""}));
+            if(valid.length!==parsed.length){
+              archiveStoredValue(STORE_KEY,INVALID_BACKUP_KEY);
+              migrationMessage="Sebagian data lokal tidak cocok dengan format terbaru. Salinan lama disimpan sebagai cadangan lokal; catatan yang valid tetap ditampilkan.";
+              localStorage.setItem(STORE_KEY,JSON.stringify(valid));
+            }
+            return valid;
+          }
+          if(localStorage.getItem(LEGACY_STORE_KEY)!==null){
+            archiveStoredValue(LEGACY_STORE_KEY,LEGACY_BACKUP_KEY);
+            migrationMessage="Format kategori berubah. Data lama tetap disimpan sebagai cadangan lokal; catatan contoh dengan kategori baru ditampilkan.";
+            localStorage.setItem(STORE_KEY,JSON.stringify(demoRecords));
+          }
+          return demoRecords.slice();
+        }catch(err){
+          console.warn("Data POIN PONG lokal tidak dapat dibaca.",err);
+          archiveStoredValue(STORE_KEY,INVALID_BACKUP_KEY);
+          migrationMessage="Data lokal tidak dapat dibaca. Salinan lama dipertahankan jika memungkinkan; catatan contoh ditampilkan.";
+          return demoRecords.slice();
+        }
+      }
+      let records=loadRecords();
+      const totals=()=>{
+        const map=new Map();
+        records.forEach(r=>{const key=studentKey(r.studentName);map.set(key,(map.get(key)||0)+r.points)});
+        return map;
+      };
       function saveRecords(){try{localStorage.setItem(STORE_KEY,JSON.stringify(records));return true}catch(err){console.warn("Tidak dapat menyimpan data lokal.",err);return false}}
+      const selectedPoints=()=>{
+        const violation=violationFor($("violationSelect").value);
+        if(!violation)return null;
+        if(violation.id==="serious"){
+          const points=Number($("seriousPoints").value);
+          return [3,4,5].includes(points)?points:null;
+        }
+        return violation.points;
+      };
+      function updatePointPreview(){
+        const serious=$("violationSelect").value==="serious";
+        $("seriousPointsField").hidden=!serious;
+        $("seriousPoints").disabled=!serious;
+        if(serious&&!$("seriousPoints").value)$("seriousPoints").value="3";
+        const points=selectedPoints();
+        $("pointPreview").textContent=points?`${points} poin`:"— poin";
+      }
       function setupForm(){
-        $("studentSelect").insertAdjacentHTML("beforeend",students.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} · ${s.klass}</option>`).join(""));
-        $("violationSelect").insertAdjacentHTML("beforeend",violations.map(v=>`<option value="${v.id}">${escapeHtml(v.name)} · ${v.points} poin</option>`).join(""));
-        $("classFilter").insertAdjacentHTML("beforeend",[...new Set(students.map(s=>s.klass))].map(c=>`<option value="${c}">${c}</option>`).join(""));
+        $("violationSelect").insertAdjacentHTML("beforeend",violations.map(v=>`<option value="${v.id}">${escapeHtml(v.name)} (${v.id==="serious"?"pilih 3–5 poin":`+${v.points} poin`})</option>`).join(""));
         $("incidentDate").value=localToday();
-        $("violationSelect").addEventListener("change",()=>{const v=violationFor($("violationSelect").value);$("pointPreview").textContent=v?`${v.points} poin`:"— poin"});
+        $("violationSelect").addEventListener("change",updatePointPreview);
+        $("seriousPoints").addEventListener("change",updatePointPreview);
         $("violationForm").addEventListener("submit",e=>{
           e.preventDefault();
-          const studentId=$("studentSelect").value,violationId=$("violationSelect").value,date=$("incidentDate").value,notes=$("notes").value.trim();
-          if(!studentId||!violationId||!date){notify("Lengkapi nama siswa, jenis pelanggaran, dan tanggal kejadian.",true);return}
+          const studentName=normalizeName($("studentName").value),violationId=$("violationSelect").value,date=$("incidentDate").value,notes=$("notes").value.trim(),points=selectedPoints();
+          if(!studentName||!violationId||!date||!points){notify("Isi nama siswa, jenis pelanggaran, poin, dan tanggal kejadian.",true);return}
           const chosen=new Date(date+"T12:00:00");
-          if(Number.isNaN(chosen.getTime())||date>localToday()){notify("Tanggal kejadian tidak valid atau berada di masa depan.",true);return}
-          const record={id:"local-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),studentId,violationId,date,notes,createdAt:Date.now()};
+          if(!validDate(date)||Number.isNaN(chosen.getTime())||date>localToday()){notify("Tanggal kejadian tidak valid atau berada di masa depan.",true);return}
+          const record={id:"local-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),studentName,violationId,points,date,notes,createdAt:Date.now()};
           records.unshift(record);
           if(!saveRecords()){records.shift();notify("Penyimpanan perangkat tidak tersedia. Catatan belum disimpan.",true);return}
-          e.currentTarget.reset();$("incidentDate").value=localToday();$("pointPreview").textContent="— poin";
-          render();notify(`Catatan ${violationFor(violationId).points} poin untuk ${studentFor(studentId).name} berhasil disimpan.`);
+          e.currentTarget.reset();$("incidentDate").value=localToday();$("seriousPoints").value="3";updatePointPreview();
+          render();notify(`Catatan ${points} poin untuk ${studentName} berhasil disimpan.`);
         });
+        updatePointPreview();
       }
       function renderMetrics(){
         const sum=totals(),levels=Object.fromEntries(["Aman","Perhatian","Pembinaan"].map(s=>[s,0]));
-        Object.values(sum).forEach(n=>levels[statusFor(n)]++);
+        sum.forEach(n=>levels[statusFor(n)]++);
         const month=localToday().slice(0,7);
-        $("studentCount").textContent=students.length;
+        $("studentCount").textContent=sum.size;
         $("violationCount").textContent=records.length;
         $("thisMonthCount").textContent=records.filter(r=>r.date.slice(0,7)===month).length;
         $("attentionCount").textContent=levels.Perhatian+levels.Pembinaan;
-        $("totalPoints").textContent=Object.values(sum).reduce((a,b)=>a+b,0);
+        $("totalPoints").textContent=[...sum.values()].reduce((a,b)=>a+b,0);
         const levelDetails=[["Aman","#53a690"],["Perhatian","#d59a43"],["Pembinaan","#c96c6c"]];
-        $("levelList").innerHTML=levelDetails.map(([name,color])=>`<div class="level-row"><span class="level-dot" style="background:${color}"></span><span class="level-name">${name}</span><span class="level-track"><span class="level-fill" style="width:${students.length?levels[name]/students.length*100:0}%;background:${color};display:block"></span></span><span class="level-count">${levels[name]}</span></div>`).join("");
+        $("levelList").innerHTML=levelDetails.map(([name,color])=>`<div class="level-row"><span class="level-dot" style="background:${color}"></span><span class="level-name">${name}</span><span class="level-track"><span class="level-fill" style="width:${sum.size?levels[name]/sum.size*100:0}%;background:${color};display:block"></span></span><span class="level-count">${levels[name]}</span></div>`).join("");
       }
       function renderStudents(){
-        const sum=totals();
-        const ordered=students.slice().sort((a,b)=>sum[b.id]-sum[a.id]||a.name.localeCompare(b.name));
-        $("studentList").innerHTML=ordered.map(s=>{const status=statusFor(sum[s.id]);const initials=s.name.split(" ").slice(0,2).map(n=>n[0]).join("");return `<div class="student-row"><div class="student-initial">${escapeHtml(initials)}</div><div class="student-meta"><strong>${escapeHtml(s.name)}</strong><span>${s.klass} · <span class="status ${statusClass(status)}">${status}</span></span></div><div class="student-points">${sum[s.id]}<small>poin</small></div></div>`}).join("");
-        $("studentsSummary").textContent=`${students.length} siswa · status dihitung otomatis`;
+        const sum=totals(),names=new Map();
+        records.slice().reverse().forEach(r=>{const key=studentKey(r.studentName);if(!names.has(key))names.set(key,normalizeName(r.studentName))});
+        const ordered=[...names].map(([key,name])=>({key,name,points:sum.get(key)||0})).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name,"id"));
+        $("studentList").innerHTML=ordered.length?ordered.map(s=>{const status=statusFor(s.points);const initials=s.name.split(" ").slice(0,2).map(n=>n[0]).join("");return `<div class="student-row"><div class="student-initial">${escapeHtml(initials)}</div><div class="student-meta"><strong>${escapeHtml(s.name)}</strong><span><span class="status ${statusClass(status)}">${status}</span></span></div><div class="student-points">${s.points}<small>poin</small></div></div>`}).join(""):`<div class="student-empty">Siswa akan tampil setelah catatan pelanggaran ditambahkan.</div>`;
+        $("studentsSummary").textContent=`${sum.size} siswa unik · status dihitung otomatis`;
       }
       function renderHistory(){
-        const query=$("searchInput").value.trim().toLocaleLowerCase("id"),klass=$("classFilter").value,status=$("statusFilter").value,sum=totals();
-        const filtered=records.filter(r=>{const s=studentFor(r.studentId),v=violationFor(r.violationId);return s&&v&&(!klass||s.klass===klass)&&(!status||statusFor(sum[s.id])===status)&&(!query||`${s.name} ${s.klass} ${v.name} ${r.notes||""}`.toLocaleLowerCase("id").includes(query))}).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+        const query=$("searchInput").value.trim().toLocaleLowerCase("id-ID"),status=$("statusFilter").value,sum=totals();
+        const filtered=records.filter(r=>{const name=normalizeName(r.studentName),key=studentKey(name),violation=violationFor(r.violationId);return violation&&(!status||statusFor(sum.get(key)||0)===status)&&(!query||`${name} ${violation.name} ${r.notes||""}`.toLocaleLowerCase("id-ID").includes(query))}).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
         $("visibleCount").textContent=`${filtered.length} catatan`;
-        $("historySummary").textContent=query||klass||status?"Hasil sesuai pencarian dan filter":"Catatan terbaru dari seluruh siswa";
-        $("historyRows").innerHTML=filtered.slice(0,50).map(r=>{const s=studentFor(r.studentId),v=violationFor(r.violationId),stat=statusFor(sum[s.id]);return `<tr><td>${dateFmt(r.date)}</td><td><div class="student-cell"><strong>${escapeHtml(s.name)}</strong><span>${s.klass}</span></div></td><td class="violation-name">${escapeHtml(v.name)}${r.notes?`<span style="display:block;font-size:9px;color:#97a2af;margin-top:3px">${escapeHtml(r.notes)}</span>`:""}</td><td><span class="points-badge">+${v.points}</span></td><td><span class="status ${statusClass(stat)}">${stat}</span></td><td><button class="record-delete" type="button" data-delete-record="${escapeHtml(r.id)}" data-testid="delete-record-${escapeHtml(r.id)}" aria-label="Hapus catatan ${escapeHtml(s.name)}: ${escapeHtml(v.name)} pada ${escapeHtml(dateFmt(r.date))}">Hapus</button></td></tr>`}).join("");
+        $("historySummary").textContent=query||status?"Hasil sesuai pencarian dan filter":"Catatan terbaru dari seluruh siswa";
+        $("historyRows").innerHTML=filtered.slice(0,50).map(r=>{const name=normalizeName(r.studentName),violation=violationFor(r.violationId),stat=statusFor(sum.get(studentKey(name))||0);return `<tr><td>${dateFmt(r.date)}</td><td><div class="student-cell"><strong>${escapeHtml(name)}</strong></div></td><td class="violation-name">${escapeHtml(violation.name)}${r.notes?`<span style="display:block;font-size:9px;color:#97a2af;margin-top:3px">${escapeHtml(r.notes)}</span>`:""}</td><td><span class="points-badge">+${r.points}</span></td><td><span class="status ${statusClass(stat)}">${stat}</span></td><td><button class="record-delete" type="button" data-delete-record="${escapeHtml(r.id)}" data-testid="delete-record-${escapeHtml(r.id)}" aria-label="Hapus catatan ${escapeHtml(name)}: ${escapeHtml(violation.name)} pada ${escapeHtml(dateFmt(r.date))}">Hapus</button></td></tr>`}).join("");
         const empty=filtered.length===0;$("historyEmpty").hidden=!empty;document.querySelector(".history-panel table").style.display=empty?"none":"table";
         $("emptyTitle").textContent=records.length?"Tidak ada catatan yang cocok":"Belum ada catatan pelanggaran";
         $("emptyText").textContent=records.length?"Coba ubah kata kunci atau filter yang dipilih.":"Catatan baru akan muncul di sini setelah disimpan.";
@@ -331,7 +385,6 @@
       }
       function render(){renderMetrics();renderStudents();renderHistory();renderChart()}
       $("searchInput").addEventListener("input",renderHistory);
-      $("classFilter").addEventListener("change",renderHistory);
       $("statusFilter").addEventListener("change",renderHistory);
       $("historyRows").addEventListener("click",e=>{
         const button=e.target.closest("[data-delete-record]");
@@ -347,12 +400,13 @@
         render();
         notify("Catatan pelanggaran berhasil dihapus.");
       });
-      $("jumpToForm").addEventListener("click",()=>{$("formSection").scrollIntoView({behavior:"smooth",block:"center"});$("studentSelect").focus({preventScroll:true})});
+      $("jumpToForm").addEventListener("click",()=>{$("formSection").scrollIntoView({behavior:"smooth",block:"center"});$("studentName").focus({preventScroll:true})});
       $("todayDate").textContent=new Intl.DateTimeFormat("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());
       document.querySelectorAll("[data-nav]").forEach(link=>link.addEventListener("click",()=>{document.querySelectorAll("[data-nav]").forEach(n=>n.classList.toggle("active",n===link));$("sidebar").classList.remove("open");$("scrim").classList.remove("open")}));
       $("menuToggle").addEventListener("click",()=>{$("sidebar").classList.add("open");$("scrim").classList.add("open")});
       $("scrim").addEventListener("click",()=>{$("sidebar").classList.remove("open");$("scrim").classList.remove("open")});
       setupForm();render();
+      if(migrationMessage)window.setTimeout(()=>notify(migrationMessage,true),350);
     })();
   </script>
 </body>
