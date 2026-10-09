@@ -109,6 +109,8 @@
     .student-cell strong{display:block;color:#233b57;font-size:11px}.student-cell span{display:block;color:#94a0ad;font-size:10px;margin-top:3px}
     .violation-name{max-width:200px}
     .points-badge{font-weight:800;color:#a45c39;background:#fff1e7;padding:5px 8px;border-radius:5px;white-space:nowrap}
+    .record-delete{border:1px solid #efd8d8;border-radius:6px;background:#fff;color:#a54d50;padding:5px 8px;font-size:10px;font-weight:700;white-space:nowrap;transition:background .15s,border-color .15s}
+    .record-delete:hover{background:#f9e8e8;border-color:#dbb5b6}
     .status{padding:5px 8px;border-radius:99px;font-size:9px;font-weight:800;white-space:nowrap}
     .status.aman{color:#317a69;background:var(--green-bg)}.status.perhatian{color:#a16d22;background:var(--amber-bg)}.status.pembinaan{color:#a54d50;background:var(--red-bg)}
     .empty-state{padding:35px 20px;text-align:center;color:#8190a0}
@@ -130,7 +132,7 @@
     .mobile-menu{display:none;border:0;background:none;color:var(--navy);font-size:22px}
     .mobile-scrim{display:none}
     @media(max-width:1080px){.sidebar{width:214px}.main{margin-left:214px}.topbar{padding:0 27px}main.content{padding:27px}.metrics{gap:11px}.metric{padding:16px}.quick-layout{grid-template-columns:minmax(270px,.8fr) minmax(0,1.5fr)}.student-list{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:760px){.sidebar{transform:translateX(-100%);transition:transform .22s ease;width:250px}.sidebar.open{transform:translateX(0)}.mobile-scrim{position:fixed;inset:0;background:rgba(8,25,44,.34);z-index:4}.mobile-scrim.open{display:block}.main{margin-left:0}.topbar{height:64px;padding:0 18px}.mobile-menu{display:block}.breadcrumb{display:flex;align-items:center;gap:12px}.today{display:none}.user-chip{padding-left:12px}.user-name,.user-role{display:none}main.content{padding:25px 18px 42px}.page-heading{align-items:flex-start;flex-direction:column;margin-bottom:20px}.page-heading .primary-btn{width:100%}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{padding:15px}.metric-value{font-size:26px;margin-top:11px}.section-grid,.quick-layout{grid-template-columns:1fr}.section-grid{gap:12px;margin-bottom:12px}.quick-layout{gap:12px}.chart{height:160px}.student-list{grid-template-columns:1fr}.panel-head{padding:16px}.filters{padding:0 15px 12px}.history-head{align-items:flex-start}.history-panel table{min-width:610px}.rule-note{font-size:10px}.student-list{padding:0 16px 12px}.top-actions{gap:8px}}
+    @media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .22s ease;width:250px}.sidebar.open{transform:translateX(0)}.mobile-scrim{position:fixed;inset:0;background:rgba(8,25,44,.34);z-index:4}.mobile-scrim.open{display:block}.main{margin-left:0}.topbar{height:64px;padding:0 18px}.mobile-menu{display:block}.breadcrumb{display:flex;align-items:center;gap:12px}.today{display:none}.user-chip{padding-left:12px}.user-name,.user-role{display:none}main.content{padding:25px 18px 42px}.page-heading{align-items:flex-start;flex-direction:column;margin-bottom:20px}.page-heading .primary-btn{width:100%}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{padding:15px}.metric-value{font-size:26px;margin-top:11px}.section-grid,.quick-layout{grid-template-columns:1fr}.section-grid{gap:12px;margin-bottom:12px}.quick-layout{gap:12px}.chart{height:160px}.student-list{grid-template-columns:1fr}.panel-head{padding:16px}.filters{padding:0 15px 12px}.history-head{align-items:flex-start}.history-panel table{min-width:610px}.rule-note{font-size:10px}.student-list{padding:0 16px 12px}.top-actions{gap:8px}}
     @media(max-width:380px){main.content{padding-left:13px;padding-right:13px}.metric{padding:13px}.metric-label{font-size:10px}.metric-value{font-size:23px}.brand{padding-left:6px}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
   </style>
@@ -198,7 +200,7 @@
               <select class="filter-control" id="statusFilter" aria-label="Filter status siswa" data-testid="status-filter"><option value="">Semua status</option><option value="Aman">Aman</option><option value="Perhatian">Perhatian</option><option value="Pembinaan">Pembinaan</option></select>
             </div>
             <div class="table-scroll">
-              <table aria-label="Tabel riwayat pelanggaran"><thead><tr><th>Tanggal</th><th>Siswa</th><th>Pelanggaran</th><th>Poin</th><th>Status terkini</th></tr></thead><tbody id="historyRows" data-testid="history-list"></tbody></table>
+              <table aria-label="Tabel riwayat pelanggaran"><thead><tr><th>Tanggal</th><th>Siswa</th><th>Pelanggaran</th><th>Poin</th><th>Status terkini</th><th>Aksi</th></tr></thead><tbody id="historyRows" data-testid="history-list"></tbody></table>
               <div class="empty-state" id="historyEmpty" hidden><div class="empty-icon">⌕</div><strong id="emptyTitle">Belum ada catatan</strong><p id="emptyText">Pelanggaran yang dicatat akan tampil di sini.</p></div>
             </div>
           </article>
@@ -229,6 +231,7 @@
         {id:"permission",name:"Keluar lingkungan tanpa izin",points:12}
       ];
       const day = 86400000;
+      const localToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
       const ago = n => new Date(Date.now() - n * day).toISOString().slice(0,10);
       const demoRecords = [
         ["s2","late",1,"08:04 · gerbang utama"],["s5","phone",2,"Saat pembelajaran"],["s1","attribute",3,"Atribut upacara"],
@@ -270,25 +273,25 @@
         $("studentSelect").insertAdjacentHTML("beforeend",students.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} · ${s.klass}</option>`).join(""));
         $("violationSelect").insertAdjacentHTML("beforeend",violations.map(v=>`<option value="${v.id}">${escapeHtml(v.name)} · ${v.points} poin</option>`).join(""));
         $("classFilter").insertAdjacentHTML("beforeend",[...new Set(students.map(s=>s.klass))].map(c=>`<option value="${c}">${c}</option>`).join(""));
-        $("incidentDate").value=new Date().toISOString().slice(0,10);
+        $("incidentDate").value=localToday();
         $("violationSelect").addEventListener("change",()=>{const v=violationFor($("violationSelect").value);$("pointPreview").textContent=v?`${v.points} poin`:"— poin"});
         $("violationForm").addEventListener("submit",e=>{
           e.preventDefault();
           const studentId=$("studentSelect").value,violationId=$("violationSelect").value,date=$("incidentDate").value,notes=$("notes").value.trim();
           if(!studentId||!violationId||!date){notify("Lengkapi nama siswa, jenis pelanggaran, dan tanggal kejadian.",true);return}
           const chosen=new Date(date+"T12:00:00");
-          if(Number.isNaN(chosen.getTime())||date>new Date().toISOString().slice(0,10)){notify("Tanggal kejadian tidak valid atau berada di masa depan.",true);return}
+          if(Number.isNaN(chosen.getTime())||date>localToday()){notify("Tanggal kejadian tidak valid atau berada di masa depan.",true);return}
           const record={id:"local-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),studentId,violationId,date,notes,createdAt:Date.now()};
           records.unshift(record);
           if(!saveRecords()){records.shift();notify("Penyimpanan perangkat tidak tersedia. Catatan belum disimpan.",true);return}
-          e.currentTarget.reset();$("incidentDate").value=new Date().toISOString().slice(0,10);$("pointPreview").textContent="— poin";
+          e.currentTarget.reset();$("incidentDate").value=localToday();$("pointPreview").textContent="— poin";
           render();notify(`Catatan ${violationFor(violationId).points} poin untuk ${studentFor(studentId).name} berhasil disimpan.`);
         });
       }
       function renderMetrics(){
         const sum=totals(),levels=Object.fromEntries(["Aman","Perhatian","Pembinaan"].map(s=>[s,0]));
         Object.values(sum).forEach(n=>levels[statusFor(n)]++);
-        const month=new Date().toISOString().slice(0,7);
+        const month=localToday().slice(0,7);
         $("studentCount").textContent=students.length;
         $("violationCount").textContent=records.length;
         $("thisMonthCount").textContent=records.filter(r=>r.date.slice(0,7)===month).length;
@@ -308,7 +311,7 @@
         const filtered=records.filter(r=>{const s=studentFor(r.studentId),v=violationFor(r.violationId);return s&&v&&(!klass||s.klass===klass)&&(!status||statusFor(sum[s.id])===status)&&(!query||`${s.name} ${s.klass} ${v.name} ${r.notes||""}`.toLocaleLowerCase("id").includes(query))}).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
         $("visibleCount").textContent=`${filtered.length} catatan`;
         $("historySummary").textContent=query||klass||status?"Hasil sesuai pencarian dan filter":"Catatan terbaru dari seluruh siswa";
-        $("historyRows").innerHTML=filtered.slice(0,50).map(r=>{const s=studentFor(r.studentId),v=violationFor(r.violationId),stat=statusFor(sum[s.id]);return `<tr><td>${dateFmt(r.date)}</td><td><div class="student-cell"><strong>${escapeHtml(s.name)}</strong><span>${s.klass}</span></div></td><td class="violation-name">${escapeHtml(v.name)}${r.notes?`<span style="display:block;font-size:9px;color:#97a2af;margin-top:3px">${escapeHtml(r.notes)}</span>`:""}</td><td><span class="points-badge">+${v.points}</span></td><td><span class="status ${statusClass(stat)}">${stat}</span></td></tr>`}).join("");
+        $("historyRows").innerHTML=filtered.slice(0,50).map(r=>{const s=studentFor(r.studentId),v=violationFor(r.violationId),stat=statusFor(sum[s.id]);return `<tr><td>${dateFmt(r.date)}</td><td><div class="student-cell"><strong>${escapeHtml(s.name)}</strong><span>${s.klass}</span></div></td><td class="violation-name">${escapeHtml(v.name)}${r.notes?`<span style="display:block;font-size:9px;color:#97a2af;margin-top:3px">${escapeHtml(r.notes)}</span>`:""}</td><td><span class="points-badge">+${v.points}</span></td><td><span class="status ${statusClass(stat)}">${stat}</span></td><td><button class="record-delete" type="button" data-delete-record="${escapeHtml(r.id)}" data-testid="delete-record-${escapeHtml(r.id)}" aria-label="Hapus catatan ${escapeHtml(s.name)}: ${escapeHtml(v.name)} pada ${escapeHtml(dateFmt(r.date))}">Hapus</button></td></tr>`}).join("");
         const empty=filtered.length===0;$("historyEmpty").hidden=!empty;document.querySelector(".history-panel table").style.display=empty?"none":"table";
         $("emptyTitle").textContent=records.length?"Tidak ada catatan yang cocok":"Belum ada catatan pelanggaran";
         $("emptyText").textContent=records.length?"Coba ubah kata kunci atau filter yang dipilih.":"Catatan baru akan muncul di sini setelah disimpan.";
@@ -330,6 +333,20 @@
       $("searchInput").addEventListener("input",renderHistory);
       $("classFilter").addEventListener("change",renderHistory);
       $("statusFilter").addEventListener("change",renderHistory);
+      $("historyRows").addEventListener("click",e=>{
+        const button=e.target.closest("[data-delete-record]");
+        if(!button)return;
+        const index=records.findIndex(r=>r.id===button.dataset.deleteRecord);
+        if(index<0)return;
+        const [removed]=records.splice(index,1);
+        if(!saveRecords()){
+          records.splice(index,0,removed);
+          notify("Penyimpanan perangkat tidak tersedia. Catatan belum dihapus.",true);
+          return;
+        }
+        render();
+        notify("Catatan pelanggaran berhasil dihapus.");
+      });
       $("jumpToForm").addEventListener("click",()=>{$("formSection").scrollIntoView({behavior:"smooth",block:"center"});$("studentSelect").focus({preventScroll:true})});
       $("todayDate").textContent=new Intl.DateTimeFormat("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());
       document.querySelectorAll("[data-nav]").forEach(link=>link.addEventListener("click",()=>{document.querySelectorAll("[data-nav]").forEach(n=>n.classList.toggle("active",n===link));$("sidebar").classList.remove("open");$("scrim").classList.remove("open")}));
