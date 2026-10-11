@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: poin-pong
+    description: POIN PONG student discipline records
+  - name: staff
+    description: Authorized staff administration
+  - name: export
+    description: Authorized data exports
 paths:
   /healthz:
     get:
@@ -24,7 +30,229 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /poin-pong/me:
+    get:
+      operationId: getPoinPongAccess
+      tags: [poin-pong]
+      summary: Get the signed-in user's POIN PONG access status
+      responses:
+        "200":
+          description: Access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /poin-pong/dashboard:
+    get:
+      operationId: getPoinPongDashboard
+      tags: [poin-pong]
+      summary: Read shared student summaries and violation history
+      responses:
+        "200":
+          description: Shared dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /poin-pong/violations:
+    post:
+      operationId: createPoinPongViolation
+      tags: [poin-pong]
+      summary: Add a violation and update the student's aggregate atomically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ViolationInput"
+      responses:
+        "201":
+          description: Violation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViolationMutationResult"
+        "200":
+          description: Previously accepted idempotent request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViolationMutationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      operationId: getPoinPongViolations
+      tags: [poin-pong]
+      summary: Read the shared violation history
+      responses:
+        "200":
+          description: Violation history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ViolationRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /poin-pong/violations/{violationId}:
+    delete:
+      operationId: deletePoinPongViolation
+      tags: [poin-pong]
+      summary: Delete a violation and recalculate the student's aggregate
+      parameters:
+        - name: violationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Violation deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /poin-pong/imports/local:
+    post:
+      operationId: importLocalPoinPongRecords
+      tags: [poin-pong]
+      summary: Import reviewed local records idempotently
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalImportInput"
+      responses:
+        "200":
+          description: Imported or already-present records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /poin-pong/staff/pending:
+    get:
+      operationId: getPendingPoinPongStaff
+      tags: [staff]
+      summary: List staff accounts awaiting admin approval
+      responses:
+        "200":
+          description: Pending staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /poin-pong/staff/{staffId}:
+    patch:
+      operationId: updatePoinPongStaff
+      tags: [staff]
+      summary: Approve, suspend, or change the role of a staff account
+      parameters:
+        - name: staffId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffUpdate"
+      responses:
+        "200":
+          description: Updated staff account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /poin-pong/export.csv:
+    get:
+      operationId: exportPoinPongCsv
+      tags: [export]
+      summary: Download a CSV backup of shared student and violation data
+      responses:
+        "200":
+          description: CSV backup
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 components:
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Unauthorized:
+      description: Sign-in required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Forbidden:
+      description: Authorized staff access required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    NotFound:
+      description: Record not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Conflict:
+      description: Idempotency key was already used for different data
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +261,216 @@ components:
           type: string
       required:
         - status
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: [error, message]
+    DisciplineStatus:
+      type: string
+      enum: [Aman, Perhatian, Pembinaan]
+    ViolationCategory:
+      type: string
+      enum: [late, attribute, serious, ceremony]
+    StaffRole:
+      type: string
+      enum: [admin, staff]
+    StaffStatus:
+      type: string
+      enum: [pending, approved, suspended]
+    AccessProfile:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, staff, pending]
+        status:
+          $ref: "#/components/schemas/StaffStatus"
+        canManage:
+          type: boolean
+      required: [email, role, status, canManage]
+    StudentSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        totalPoints:
+          type: integer
+        status:
+          $ref: "#/components/schemas/DisciplineStatus"
+      required: [id, name, totalPoints, status]
+    ViolationRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        studentId:
+          type: string
+          format: uuid
+        studentName:
+          type: string
+        category:
+          $ref: "#/components/schemas/ViolationCategory"
+        date:
+          type: string
+          format: date
+        points:
+          type: integer
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, studentId, studentName, category, date, points, notes, createdAt]
+    DashboardMetrics:
+      type: object
+      properties:
+        studentCount:
+          type: integer
+        violationCount:
+          type: integer
+        thisMonthCount:
+          type: integer
+        attentionCount:
+          type: integer
+        totalPoints:
+          type: integer
+        statusCounts:
+          type: object
+          properties:
+            Aman:
+              type: integer
+            Perhatian:
+              type: integer
+            Pembinaan:
+              type: integer
+          required: [Aman, Perhatian, Pembinaan]
+      required: [studentCount, violationCount, thisMonthCount, attentionCount, totalPoints, statusCounts]
+    DashboardData:
+      type: object
+      properties:
+        metrics:
+          $ref: "#/components/schemas/DashboardMetrics"
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudentSummary"
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ViolationRecord"
+      required: [metrics, students, records]
+    ViolationInput:
+      type: object
+      properties:
+        studentName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          $ref: "#/components/schemas/ViolationCategory"
+        date:
+          type: string
+          format: date
+        points:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+          maxLength: 500
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 160
+      required: [studentName, category, date, points, idempotencyKey]
+    ViolationMutationResult:
+      type: object
+      properties:
+        record:
+          $ref: "#/components/schemas/ViolationRecord"
+        duplicate:
+          type: boolean
+        student:
+          $ref: "#/components/schemas/StudentSummary"
+      required: [record, duplicate, student]
+    LocalImportRecord:
+      type: object
+      properties:
+        sourceId:
+          type: string
+          minLength: 1
+          maxLength: 160
+        studentName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          $ref: "#/components/schemas/ViolationCategory"
+        date:
+          type: string
+          format: date
+        points:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+          maxLength: 500
+      required: [sourceId, studentName, category, date, points]
+    LocalImportInput:
+      type: object
+      properties:
+        records:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/LocalImportRecord"
+      required: [records]
+    ImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        duplicates:
+          type: integer
+        total:
+          type: integer
+      required: [imported, duplicates, total]
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/StaffRole"
+        status:
+          $ref: "#/components/schemas/StaffStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, role, status, createdAt]
+    StaffUpdate:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/StaffRole"
+        status:
+          $ref: "#/components/schemas/StaffStatus"
+      minProperties: 1
 
